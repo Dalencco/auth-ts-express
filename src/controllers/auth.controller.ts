@@ -12,32 +12,30 @@ export default class AuthController {
 
     @Get('/users')
     @isAuth()
-    public async show(req: Request, res: Response): Promise<void> {
+    public async show(req: Request, res: Response): Promise<void | Response> {
 
         const users = await prisma.user.findMany({ include: { roles: true } });
 
-        res 
+        return res 
             .status(202)
             .json({ users })
     }
 
     @Get('/getuser')
     @isAuth()
-    public index(req: Request, res: Response): void {
-        res
+    public index(req: Request, res: Response): void | Response {
+        return res
             .status(200)
             .json({ user: "Your User Information" })
     }
 
     @Post('/register')
-    public async register(req: Request, res: Response): Promise<void> {
+    public async register(req: Request, res: Response): Promise<void | Response> {
 
         const { email, password }: UserInterface = req.body;
-
         const newPassword = await bcrypt.hash(password, 10);
 
         try {
-         
             const newUser = await prisma.user.create({ data: {
                     email,
                     password: newPassword
@@ -47,16 +45,22 @@ export default class AuthController {
 
             let token = jwt.sign(newUser, 'asdasdasd', { expiresIn: '7d' });
 
-            res.status(201).cookie('X-TOKEN', token, { maxAge: 7 * 24 * 60 * 60 * 1000, httpOnly: true }).json({ user: newUser, token });
+            return res
+                .status(201)
+                .cookie('X-TOKEN', token, { 
+                    maxAge: 7 * 24 * 60 * 60 * 1000, 
+                    httpOnly: true 
+                }).
+                json({ user: newUser, token });
 
         } catch (error) {
-            res.status(422).json({ error })
+            return res.status(422).json({ error })
         }
     }
 
     @Post('/login')
-    public async login(req: Request, res: Response): Promise<void> {
-
+    public async login(req: Request, res: Response): Promise<void | Response> {
+        
         const { email, password }: UserInterface = req.body;
 
         const findUser = await prisma.user.findUnique({
@@ -64,19 +68,25 @@ export default class AuthController {
             include: { roles: true }
         })
 
-        if (!findUser) res
+        if (!findUser) return res
             .status(404)
             .json({ error: 'User not Found' })
 
-        let test = await bcrypt.compare(password, findUser!.password);
+        let test = await bcrypt.compare(password!, findUser!.password);
 
-        if (!test) res
+        if (!test) return res
             .status(400)
             .json({ error: 'Invalid password' })
 
         let token = jwt.sign(findUser!, 'asdasdasd', { expiresIn: '7d' });
 
-        res.status(201).cookie('X-TOKEN', token, { maxAge: 7 * 24 * 60 * 60 * 1000, httpOnly: true }).json({ user: findUser!, token });
+        return res
+            .status(201)
+            .cookie('X-TOKEN', token, { 
+                maxAge: 7 * 24 * 60 * 60 * 1000, 
+                httpOnly: true 
+            })
+            .json({ user: findUser!, token });
     }
 
 }
