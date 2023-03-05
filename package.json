@@ -40,7 +40,7 @@
     "dev": "ts-node-dev -r tsconfig-paths/register src/index.ts",
     "build": "tsc --build && resolve-tspaths",
     "clean": "tsc --build --clean",
-    "migrate": "prsiam migrate dev --name init",
+    "migrate": "prisma migrate dev --name init",
     "migrate:fresh": "prisma migrate reset"
   },
   "keywords": [],
